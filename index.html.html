@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>콘텐츠 전략 생성기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+:root {
+  --navy:#0D1B3E; --blue:#1A3A6B; --gold:#C8941A; --gold-lt:#E8B84B; --gold-pale:#FDF6E8;
+  --white:#fff; --off:#F6F8FC; --surface:#EEF1F8; --border:#D8DEF0; --border-lt:#E8EDF6;
+  --text:#0D1B3E; --muted:#6A7A96; --light:#A0AABF;
+  --ok:#0F6E56; --ok-bg:#E1F5EE; --err:#A32D2D; --err-bg:#FCEBEB;
+  --r:10px; --r-lg:16px; --r-xl:22px;
+  --shadow:0 2px 12px rgba(13,27,62,.07),0 1px 3px rgba(13,27,62,.05);
+  --shadow-lg:0 8px 32px rgba(13,27,62,.10),0 2px 8px rgba(13,27,62,.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;-webkit-font-smoothing:antialiased;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--off);color:var(--text);min-height:100vh;}
+
+/* ── Shell ── */
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
+
+/* ── Sidebar ── */
+.sidebar{background:var(--navy);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:hidden;}
+.logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.08);}
+.logo-mark{width:36px;height:36px;background:var(--gold);border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;}
+.logo-mark svg{width:20px;height:20px;fill:var(--navy);}
+.logo-name{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:#fff;line-height:1.3;letter-spacing:-.01em;}
+.logo-sub{font-size:9px;color:var(--gold-lt);letter-spacing:.12em;margin-top:2px;text-transform:uppercase;}
+.nav{flex:1;padding:14px 0;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:10px 20px;font-size:12.5px;color:rgba(255,255,255,.45);cursor:pointer;border-left:3px solid transparent;transition:all .12s;user-select:none;}
+.nav-item.on{color:var(--gold-lt);background:rgba(200,148,26,.1);border-left-color:var(--gold);font-weight:600;}
+.nav-item:hover:not(.on){color:rgba(255,255,255,.7);background:rgba(255,255,255,.04);}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--gold);color:var(--navy);font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;}
+.sidebar-foot{padding:14px 20px;border-top:1px solid rgba(255,255,255,.07);font-size:10px;color:rgba(255,255,255,.25);line-height:1.8;}
+
+/* ── Main ── */
+.main{min-height:100vh;display:flex;flex-direction:column;}
+.page{display:none;flex:1;padding:36px 44px;max-width:920px;}
+.page.on{display:flex;flex-direction:column;}
+
+/* ── Page header ── */
+.ph{margin-bottom:28px;}
+.ph-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--navy);letter-spacing:-.02em;margin-bottom:5px;}
+.ph-sub{font-size:13px;color:var(--muted);}
+
+/* ── Progress bar ── */
+.progress{display:flex;gap:0;margin-bottom:28px;background:var(--surface);border-radius:50px;padding:4px;border:1px solid var(--border);}
+.step-pill{flex:1;text-align:center;padding:7px 8px;border-radius:50px;font-size:11px;font-weight:500;color:var(--light);cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.step-pill.done{color:var(--ok);}
+.step-pill.on{background:var(--navy);color:var(--white);font-weight:600;box-shadow:var(--shadow);}
+.step-num{width:17px;height:17px;border-radius:50%;background:rgba(255,255,255,.15);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-pill.done .step-num{background:var(--ok);color:#fff;}
+.step-pill:not(.on) .step-num{background:var(--border);color:var(--muted);}
+
+/* ── Cards ── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-xl);padding:24px 28px;margin-bottom:16px;box-shadow:var(--shadow);}
+.card-label{font-size:10.5px;font-weight:700;color:var(--light);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;}
+
+/* ── Form elements ── */
+label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px;margin-top:16px;}
+label:first-child{margin-top:0;}
+input[type=text],select,textarea{
+  width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r);
+  font-size:13.5px;font-family:'Noto Sans KR',sans-serif;color:var(--text);background:var(--white);
+  outline:none;transition:border-color .15s,box-shadow .15s;
+}
+input[type=text]:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,148,26,.1);}
+select{cursor:pointer;}
+
+/* ── 검색 가능한 드롭다운 (Combobox) ── */
+.cb-wrap{position:relative;}
+.cb-trigger{
+  width:100%;padding:9px 36px 9px 12px;
+  border:1.5px solid var(--border);border-radius:var(--r);
+  background:var(--white);color:var(--text);
+  font-size:13.5px;font-family:'Noto Sans KR',sans-serif;
+  cursor:pointer;text-align:left;outline:none;
+  display:flex;align-items:center;justify-content:space-between;
+  transition:border-color .15s,box-shadow .15s;
+}
+.cb-trigger:hover{border-color:var(--gold);}
+.cb-trigger:focus,.cb-trigger[aria-expanded="true"]{
+  border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,148,26,.1);
+}
+.cb-trigger-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+.cb-trigger-text.placeholder{color:#BCC6D8;}
+.cb-chevron{flex-shrink:0;margin-left:6px;color:var(--muted);transition:transform .15s;width:14px;height:14px;}
+.cb-trigger[aria-expanded="true"] .cb-chevron{transform:rotate(180deg);}
+.cb-panel{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:var(--white);border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  box-shadow:0 8px 28px rgba(13,27,62,.12),0 2px 8px rgba(13,27,62,.07);
+  z-index:9999;display:none;flex-direction:column;max-height:300px;
+}
+.cb-panel.open{display:flex;}
+.cb-search-wrap{
+  padding:7px;border-bottom:1px solid var(--border-lt);
+  flex-shrink:0;position:relative;
+}
+.cb-search{
+  width:100%;padding:7px 10px 7px 30px;
+  border:1.5px solid var(--border);border-radius:var(--r);
+  background:var(--surface);color:var(--text);
+  font-size:13px;font-family:'Noto Sans KR',sans-serif;
+  outline:none;transition:border-color .12s,background .12s;
+}
+.cb-search:focus{border-color:var(--gold);background:var(--white);}
+.cb-search-icon{
+  position:absolute;left:16px;top:50%;transform:translateY(-50%);
+  width:13px;height:13px;color:var(--muted);pointer-events:none;
+}
+.cb-list{overflow-y:auto;flex:1;padding:4px 0;}
+.cb-list::-webkit-scrollbar{width:4px;}
+.cb-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.cb-group-label{
+  padding:7px 12px 3px;font-size:10px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--light);border-top:1px solid var(--border-lt);
+}
+.cb-group-label:first-child{border-top:none;}
+.cb-option{
+  padding:7px 12px;font-size:13px;color:var(--text);
+  cursor:pointer;transition:background .08s;
+}
+.cb-option:hover,.cb-option.cb-focused{background:var(--surface);}
+.cb-option.cb-selected{background:var(--gold-pale);color:#7A5800;font-weight:600;}
+.cb-highlight{background:#FAC775;border-radius:2px;padding:0 1px;color:#412402;}
+.cb-empty{padding:18px 12px;font-size:13px;color:var(--light);text-align:center;}
+textarea{resize:vertical;min-height:75px;line-height:1.65;}
+textarea::placeholder,input::placeholder{color:#BCC6D8;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+/* ── Tags ── */
+.tag-wrap{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
+.tag{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);font-size:12px;cursor:pointer;background:var(--white);color:var(--muted);transition:all .12s;user-select:none;font-family:'Noto Sans KR',sans-serif;}
+.tag.on{background:var(--gold-pale);color:#7A5800;border-color:var(--gold);font-weight:600;}
+
+/* ── Buttons ── */
+.btn-main{
+  width:100%;padding:13px;background:var(--navy);color:#fff;
+  border:none;border-radius:var(--r);font-size:14px;font-weight:700;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all .15s;letter-spacing:.01em;margin-top:20px;
+}
+.btn-main:hover:not(:disabled){background:var(--blue);transform:translateY(-1px);box-shadow:var(--shadow-lg);}
+.btn-main:disabled{background:var(--border);color:var(--light);cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-main.gold{background:var(--gold);color:var(--navy);}
+.btn-main.gold:hover:not(:disabled){background:#B8840A;}
+.btn-sec{padding:9px 18px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--white);color:var(--muted);font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .12s;}
+.btn-sec:hover{background:var(--surface);color:var(--text);}
+.btn-row{display:flex;gap:10px;margin-top:20px;}
+.btn-row .btn-main{margin-top:0;flex:1;}
+
+/* ── Status ── */
+.msg{border-radius:var(--r);padding:12px 15px;font-size:13px;margin-top:12px;display:flex;align-items:flex-start;gap:9px;line-height:1.6;}
+.msg.ok {background:var(--ok-bg); color:var(--ok); border:1px solid rgba(15,110,86,.2);}
+.msg.err{background:var(--err-bg);color:var(--err);border:1px solid rgba(163,45,45,.2);}
+.msg.info{background:var(--gold-pale);color:#7A5800;border:1px solid rgba(200,148,26,.25);}
+.msg.loading{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+.spinner{width:16px;height:16px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── API Key area ── */
+.api-area{background:var(--surface);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:16px;border:1px solid var(--border);}
+.api-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+.api-row{display:flex;gap:8px;}
+.api-input{flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px;font-family:monospace;color:var(--text);background:var(--white);outline:none;}
+.api-input:focus{border-color:var(--gold);}
+.api-toggle{padding:8px 14px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--white);font-size:12px;cursor:pointer;color:var(--muted);font-family:'Noto Sans KR',sans-serif;white-space:nowrap;}
+.api-toggle:hover{background:var(--surface);}
+.api-saved{font-size:11px;color:var(--ok);margin-top:6px;display:flex;align-items:center;gap:4px;}
+
+/* ── Output area ── */
+.output-box{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-xl);overflow:hidden;margin-top:0;}
+.output-header{padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.output-status{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:pulse 1.1s ease-in-out infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(.8);opacity:.6;}}
+.output-body{padding:24px 28px;max-height:55vh;overflow-y:auto;font-size:13.5px;line-height:1.75;color:var(--text);}
+.output-body h2{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--navy);margin:22px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--gold);}
+.output-body h2:first-child{margin-top:0;}
+.output-body h3{font-size:13px;font-weight:700;color:var(--blue);margin:14px 0 7px;}
+.output-body p{margin:5px 0;color:var(--muted);}
+.output-body li{margin:4px 0 4px 16px;color:var(--muted);}
+.output-body strong{color:var(--navy);font-weight:600;}
+.output-body table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12.5px;}
+.output-body th{background:var(--navy);color:var(--gold-lt);padding:7px 12px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.03em;}
+.output-body td{padding:6px 12px;border-bottom:1px solid var(--border-lt);color:var(--muted);}
+.output-body tr:nth-child(even) td{background:var(--off);}
+.cursor{display:inline-block;width:2px;height:15px;background:var(--gold);margin-left:2px;vertical-align:middle;animation:blink .8s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+/* ── History ── */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.stat{background:var(--surface);border-radius:var(--r-lg);padding:15px 18px;}
+.stat-v{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--navy);}
+.stat-l{font-size:11px;color:var(--muted);margin-top:3px;}
+.hist-item{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:10px;background:var(--white);cursor:pointer;transition:box-shadow .15s;}
+.hist-item:hover{box-shadow:var(--shadow-lg);}
+.hist-name{font-size:13.5px;font-weight:600;color:var(--navy);}
+.hist-meta{font-size:11.5px;color:var(--muted);margin-top:3px;}
+.hist-del{width:28px;height:28px;border:1px solid var(--border);border-radius:7px;background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.hist-del:hover{background:var(--err-bg);border-color:rgba(163,45,45,.3);}
+.hist-del svg{width:12px;height:12px;stroke:var(--err);}
+.empty{text-align:center;padding:48px;color:var(--light);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+    <div class="logo-name">콘텐츠 전략<br>생성기</div>
+    <div class="logo-sub">Strategy Generator</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item on" onclick="showPage('gen',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      전략 생성 + PPT
+      <span class="nav-badge" id="stepBadge">1/3</span>
+    </div>
+    <div class="nav-item" onclick="showPage('hist',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      생성 이력
+    </div>
+    <div class="nav-item" onclick="showPage('setup',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      API 키 설정
+    </div>
+  </nav>
+  <div class="sidebar-foot">사내 전용 툴<br>외부 공유 금지</div>
+</aside>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <!-- ══ STEP 1 → 2 → 3 페이지 ══ -->
+  <div class="page on" id="page-gen">
+    <div class="ph">
+      <div class="ph-title">전략 생성 + PPT 다운로드</div>
+      <div class="ph-sub">광고주 정보 입력 → AI 전략 생성 → PPT 자동 변환 3단계</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress">
+      <div class="step-pill on" id="pill1"><div class="step-num">1</div>광고주 정보 입력</div>
+      <div class="step-pill" id="pill2"><div class="step-num">2</div>전략 생성 & 검토</div>
+      <div class="step-pill" id="pill3"><div class="step-num">3</div>PPT 다운로드</div>
+    </div>
+
+    <!-- Step 1: 폼 -->
+    <div id="s1">
+      <div class="card">
+        <div class="card-label">기본 정보</div>
+        <div class="row2">
+          <div>
+            <label>광고주(브랜드)명 *</label>
+            <input type="text" id="f_name" placeholder="예: 슈가브로우">
+          </div>
+          <div>
+            <label id="lbl-industry">업종 / 카테고리 *</label>
+            <div class="cb-wrap" id="cb-industry">
+              <button class="cb-trigger" type="button"
+                aria-haspopup="listbox" aria-expanded="false"
+                aria-labelledby="lbl-industry"
+                id="cb-industry-btn">
+                <span class="cb-trigger-text placeholder" id="cb-industry-display">선택하세요</span>
+                <svg class="cb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              <div class="cb-panel" id="cb-industry-panel" role="listbox">
+                <div class="cb-search-wrap">
+                  <svg class="cb-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input type="text" class="cb-search" id="cb-industry-search"
+                    placeholder="업종 검색... (예: 반영구, 카페, 헬스)" autocomplete="off"/>
+                </div>
+                <div class="cb-list" id="cb-industry-list" role="group"></div>
+              </div>
+              <input type="hidden" id="f_industry">
+            </div>
+          </div>
+        </div>
+        <label>주요 상품 / 서비스</label>
+        <input type="text" id="f_product" placeholder="예: 눈썹 반영구, 속눈썹 연장, 왁싱 패키지">
+        <label>핵심 타겟 고객</label>
+        <input type="text" id="f_target" placeholder="예: 20-40대 직장 여성, 자연스러운 인상을 원하는 남성">
+      </div>
+
+      <div class="card">
+        <div class="card-label">전략 방향</div>
+        <label>콘텐츠 목표 (복수 선택)</label>
+        <div class="tag-wrap" id="goals">
+          <span class="tag" data-v="브랜드 인지도">브랜드 인지도</span>
+          <span class="tag" data-v="트래픽 증대">트래픽 증대</span>
+          <span class="tag" data-v="예약/문의 전환">예약/문의 전환</span>
+          <span class="tag" data-v="구매 전환">구매 전환</span>
+          <span class="tag" data-v="리드 확보">리드 확보</span>
+          <span class="tag" data-v="재방문/리텐션">재방문/리텐션</span>
+          <span class="tag" data-v="충성고객 육성">충성고객 육성</span>
+          <span class="tag" data-v="사고 리더십">사고 리더십</span>
+        </div>
+        <label>주요 채널 (복수 선택)</label>
+        <div class="tag-wrap" id="channels">
+          <span class="tag" data-v="인스타그램">인스타그램</span>
+          <span class="tag" data-v="유튜브">유튜브</span>
+          <span class="tag" data-v="틱톡">틱톡</span>
+          <span class="tag" data-v="블로그/SEO">블로그/SEO</span>
+          <span class="tag" data-v="네이버 플레이스">네이버 플레이스</span>
+          <span class="tag" data-v="카카오채널">카카오채널</span>
+          <span class="tag" data-v="유튜브 쇼츠">유튜브 쇼츠</span>
+          <span class="tag" data-v="당근마켓">당근마켓</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">심화 정보 (선택 — 입력할수록 전략 퀄리티 상승)</div>
+        <label>경쟁사 대비 강점 / USP</label>
+        <textarea id="f_usp" placeholder="예: K뷰티 국제 대회 심사위원 원장 직접 시술, 소개 및 재방문율 1등, 피부 손상 없는 안전한 시술"></textarea>
+        <label>고객이 자주 묻는 질문 / 구매 전 고민</label>
+        <textarea id="f_faq" placeholder="예: 시술 시 아픈가요? 유지 기간은? 남성도 받을 수 있나요?"></textarea>
+        <label>특이사항 (타겟 분리 필요 여부, 오픈 이벤트, 시즌 이슈 등)</label>
+        <textarea id="f_notes" placeholder="예: 시술 고객 + 수강 고객 타겟 분리 필요, 천안·아산 지역 한정 운영" style="min-height:60px;"></textarea>
+      </div>
+
+      <div id="msg1"></div>
+      <button class="btn-main" id="btn1" onclick="generateStrategy()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        AI 콘텐츠 전략 생성하기
+      </button>
+    </div>
+
+    <!-- Step 2: 전략 출력 -->
+    <div id="s2" style="display:none;">
+      <div class="output-box">
+        <div class="output-header">
+          <div class="output-status" id="outStatus">
+            <div class="pulse"></div>
+            <span id="outLabel">전략 생성 중...</span>
+          </div>
+          <div style="display:flex;gap:8px;" id="outActions" style="display:none;"></div>
+        </div>
+        <div class="output-body" id="outBody"></div>
+      </div>
+      <div id="msg2"></div>
+      <div class="btn-row" id="btnRow2" style="display:none;">
+        <button class="btn-sec" onclick="goStep(1)">← 다시 입력</button>
+        <button class="btn-main gold" onclick="goStep(3)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          PPT 생성 & 다운로드
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: PPT 생성 -->
+    <div id="s3" style="display:none;">
+      <div class="card" style="text-align:center;padding:40px;">
+        <div id="s3icon" style="font-size:48px;margin-bottom:16px;">⚡</div>
+        <div id="s3title" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px;">PPT 생성 중...</div>
+        <div id="s3sub" style="font-size:13px;color:var(--muted);">슬라이드를 구성하고 있습니다</div>
+        <div id="s3msg"></div>
+      </div>
+      <div class="btn-row" id="btnRow3" style="display:none;">
+        <button class="btn-sec" onclick="goStep(2)">← 전략 다시 보기</button>
+        <button class="btn-main" onclick="goStep(1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          새 광고주 전략 생성
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 이력 페이지 ══ -->
+  <div class="page" id="page-hist">
+    <div class="ph"><div class="ph-title">생성 이력</div><div class="ph-sub">저장된 전략 목록</div></div>
+    <div class="stat-row">
+      <div class="stat"><div class="stat-v" id="hTotal">0</div><div class="stat-l">총 생성</div></div>
+      <div class="stat"><div class="stat-v" id="hMonth">0</div><div class="stat-l">이번 달</div></div>
+      <div class="stat"><div class="stat-v" id="hLast">-</div><div class="stat-l">마지막 날짜</div></div>
+    </div>
+    <div id="histList"></div>
+  </div>
+
+  <!-- ══ API 설정 페이지 ══ -->
+  <div class="page" id="page-setup">
+    <div class="ph"><div class="ph-title">API 키 설정</div><div class="ph-sub">Anthropic API 키를 입력하면 브라우저에 안전하게 저장됩니다</div></div>
+    <div class="card">
+      <div class="card-label">Anthropic API Key</div>
+      <div class="api-row">
+        <input class="api-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-...">
+        <button class="api-toggle" onclick="toggleApiVis()">보기</button>
+        <button class="btn-sec" onclick="saveApiKey()">저장</button>
+      </div>
+      <div id="apiSavedMsg"></div>
+      <div style="margin-top:16px;font-size:12.5px;color:var(--muted);line-height:1.8;">
+        API 키는 이 브라우저(localStorage)에만 저장되며 외부로 전송되지 않습니다.<br>
+        키 발급: <a href="https://console.anthropic.com" target="_blank" style="color:var(--gold);">console.anthropic.com</a> → API Keys → Create Key
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">비용 안내</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.9;">
+        모델: <strong style="color:var(--navy)">claude-sonnet-4-5</strong><br>
+        전략 1건 생성 비용: 약 <strong style="color:var(--navy)">$0.05~0.15 (70~210원)</strong><br>
+        월 50건 생성 시: 약 <strong style="color:var(--navy)">$5~7 (7,000~10,000원)</strong>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ── 상태 ──────────────────────────────────────────────────────────
+let rawStrategy = '';
+let currentName = '';
+let hist = JSON.parse(localStorage.getItem('cs_hist')||'[]');
+
+// ── API Key ───────────────────────────────────────────────────────
+function getApiKey(){ return localStorage.getItem('cs_apikey')||''; }
+function saveApiKey(){
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if(!k){ showApiMsg('API 키를 입력하세요','err'); return; }
+  localStorage.setItem('cs_apikey', k);
+  showApiMsg('✓ 저장되었습니다','ok');
+}
+function toggleApiVis(){
+  const i = document.getElementById('apiKeyInput');
+  i.type = i.type==='password'?'text':'password';
+}
+function showApiMsg(txt,type){
+  const el = document.getElementById('apiSavedMsg');
+  el.innerHTML = `<div class="msg ${type}" style="margin-top:8px;">${txt}</div>`;
+}
+
+// ── 페이지 전환 ───────────────────────────────────────────────────
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
+  document.getElementById('page-'+id).classList.add('on');
+  el.classList.add('on');
+  if(id==='hist') renderHist();
+  if(id==='setup'){
+    const k=getApiKey();
+    if(k) document.getElementById('apiKeyInput').value=k;
+  }
+}
+
+// ── 태그 토글 ─────────────────────────────────────────────────────
+document.querySelectorAll('.tag').forEach(t=>{
+  t.addEventListener('click',()=>t.classList.toggle('on'));
+});
+function getTags(gid){
+  return [...document.querySelectorAll(`#${gid} .tag.on`)].map(t=>t.dataset.v);
+}
+
+// ── Step 이동 ─────────────────────────────────────────────────────
+function goStep(n){
+  ['s1','s2','s3'].forEach((id,i)=>document.getElementById(id).style.display=i===n-1?'block':'none');
+  ['pill1','pill2','pill3'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.classList.remove('on','done');
+    if(i===n-1) el.classList.add('on');
+    else if(i<n-1) el.classList.add('done');
+  });
+  document.getElementById('stepBadge').textContent=`${n}/3`;
+}
+
+// ── 마크다운 → HTML ───────────────────────────────────────────────
+function md2html(text){
+  return text
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
+    .replace(/^> (.+)$/gm,'<p style="border-left:3px solid var(--gold);padding-left:12px;color:var(--navy);font-weight:600;">$1</p>')
+    .replace(/\|(.+)\|/g,(m)=>{
+      const cells=m.split('|').filter(c=>c.trim()&&!c.trim().match(/^[-\s]+$/));
+      if(!cells.length)return '';
+      return '<tr>'+cells.map(c=>`<td>${c.trim()}</td>`).join('')+'</tr>';
+    })
+    .replace(/(<tr>.*<\/tr>\n?)+/gs, m=>`<table>${m.replace(/<\/tr>\n<tr>/g,'</tr><tr>')}</table>`)
+    .replace(/\n{2,}/g,'<br>')
+    .replace(/\n/g,' ');
+}
+
+// ── 전략 생성 ─────────────────────────────────────────────────────
+async function generateStrategy(){
+  const apiKey = getApiKey();
+  if(!apiKey){
+    document.getElementById('msg1').innerHTML='<div class="msg err">⚠ API 키가 설정되지 않았습니다. 왼쪽 메뉴 <strong>API 키 설정</strong>에서 먼저 입력해주세요.</div>';
+    return;
+  }
+  const name    = document.getElementById('f_name').value.trim();
+  const industry= document.getElementById('f_industry').value;  // hidden input (combobox 연동)
+  if(!name||!industry){
+    document.getElementById('msg1').innerHTML='<div class="msg err">광고주명과 업종은 필수입니다.</div>';
+    return;
+  }
+  currentName = name;
+
+  const prompt = buildPrompt({
+    name, industry,
+    product : document.getElementById('f_product').value.trim(),
+    target  : document.getElementById('f_target').value.trim(),
+    goals   : getTags('goals').join(', '),
+    channels: getTags('channels').join(', '),
+    usp     : document.getElementById('f_usp').value.trim(),
+    faq     : document.getElementById('f_faq').value.trim(),
+    notes   : document.getElementById('f_notes').value.trim(),
+  });
+
+  goStep(2);
+  const body = document.getElementById('outBody');
+  const label= document.getElementById('outLabel');
+  const btnRow= document.getElementById('btnRow2');
+  body.innerHTML = '';
+  btnRow.style.display = 'none';
+  rawStrategy = '';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-5',
+        max_tokens:4000,
+        stream:true,
+        messages:[{role:'user',content:prompt}],
+      }),
+    });
+
+    if(!res.ok){
+      const e=await res.json().catch(()=>({}));
+      throw new Error(e.error?.message||`API 오류 (${res.status})`);
+    }
+
+    const reader=res.body.getReader();
+    const dec=new TextDecoder();
+
+    while(true){
+      const {done,value}=await reader.read();
+      if(done) break;
+      const lines=dec.decode(value,{stream:true}).split('\n');
+      for(const line of lines){
+        if(!line.startsWith('data: ')) continue;
+        const d=line.slice(6).trim();
+        if(d==='[DONE]') continue;
+        try{
+          const p=JSON.parse(d);
+          if(p.type==='content_block_delta'&&p.delta?.type==='text_delta'){
+            rawStrategy+=p.delta.text;
+            body.innerHTML=md2html(rawStrategy)+'<span class="cursor"></span>';
+            body.scrollTop=body.scrollHeight;
+          }
+        }catch{}
+      }
+    }
+
+    // 완료
+    body.innerHTML=md2html(rawStrategy);
+    label.textContent='✓ 전략 생성 완료';
+    document.querySelector('.pulse').style.display='none';
+    btnRow.style.display='flex';
+
+    // 이력 저장
+    hist.unshift({name, industry, date:new Date().toISOString()});
+    if(hist.length>50) hist.pop();
+    localStorage.setItem('cs_hist',JSON.stringify(hist));
+
+  } catch(e){
+    body.innerHTML=`<div class="msg err">오류: ${e.message}</div>`;
+    label.textContent='오류 발생';
+  }
+}
+
+// ── 프롬프트 빌더 ─────────────────────────────────────────────────
+function buildPrompt(f){
+  return `당신은 디지털 마케팅 전문 콘텐츠 전략가입니다. 아래 광고주 정보를 바탕으로 실무에서 즉시 활용 가능한 맞춤형 콘텐츠 전략 보고서를 생성하세요.
+
+광고주명: ${f.name}
+업종: ${f.industry}
+주요 상품/서비스: ${f.product||'미입력'}
+핵심 타겟: ${f.target||'미입력'}
+콘텐츠 목표: ${f.goals||'미선택'}
+주요 채널: ${f.channels||'미선택'}
+경쟁사 대비 강점(USP): ${f.usp||'미입력'}
+자주 묻는 질문: ${f.faq||'미입력'}
+특이사항: ${f.notes||'없음'}
+
+아래 5개 섹션을 마크다운으로 작성하세요. 인사말 없이 바로 시작하세요.
+
+## 1. 핵심 콘텐츠 필라
+3~5개 필라. 각 필라마다:
+### 필라 N. [필라명]
+**선정 이유:** (구체적 근거)
+**콘텐츠 방향:**
+- 아이디어1
+- 아이디어2
+- 아이디어3
+
+## 2. 채널별 콘텐츠 전략
+채널마다 표 형식:
+### [채널명]
+| 콘텐츠 유형 | Searchable/Shareable | 주제 및 포인트 |
+
+## 3. 바이어 여정 단계별 콘텐츠
+### 🔍 인지 단계
+**목표:** ...
+- 아이디어
+### 🤔 고려 단계
+**목표:** ...
+- 아이디어
+### 🎯 구매/예약 단계
+**목표:** ...
+- 아이디어
+### 🔄 재방문 단계
+**목표:** ...
+- 아이디어
+
+## 4. 우선순위 콘텐츠 TOP 5
+| 순위 | 콘텐츠 제목 | 유형 | 타겟 키워드 | 선정 이유 |
+
+## 5. 피해야 할 콘텐츠 패턴
+**① [패턴명]**
+(설명 및 대안)
+...최대 6개
+
+마지막 줄:
+> **핵심 한 줄:** [이 광고주의 전략을 한 문장으로]
+
+품질 기준: 모든 내용은 이 업종과 타겟에 맞게 구체적으로. 일반론 금지. 콘텐츠 제목은 실제 사용 가능한 수준으로.`;
+}
+
+// ── PPT 생성 (pptxgenjs 브라우저 버전) ───────────────────────────
+async function goStep(n){
+  ['s1','s2','s3'].forEach((id,i)=>document.getElementById(id).style.display=i===n-1?'block':'none');
+  ['pill1','pill2','pill3'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.classList.remove('on','done');
+    if(i===n-1) el.classList.add('on');
+    else if(i<n-1) el.classList.add('done');
+  });
+  document.getElementById('stepBadge').textContent=`${n}/3`;
+
+  if(n===3) await buildAndDownloadPPT();
+}
+
+function parseStrategy(text){
+  const r={pillars:[],channels:[],journey:{awareness:[],consideration:[],conversion:[],retention:[]},top5:[],warnings:[],summary:''};
+  let sec=null, pillar=null, channel=null, jStage=null;
+  const lines=text.split('\n');
+  for(const line of lines){
+    const t=line.trim();
+    if(/^##\s*1/.test(t)||t.includes('핵심 콘텐츠 필라')){sec='p';pillar=null;continue;}
+    if(/^##\s*2/.test(t)||t.includes('채널별')){sec='c';channel=null;continue;}
+    if(/^##\s*3/.test(t)||t.includes('바이어 여정')){sec='j';jStage=null;continue;}
+    if(/^##\s*4/.test(t)||t.includes('TOP 5')||t.includes('우선순위')){sec='t';continue;}
+    if(/^##\s*5/.test(t)||t.includes('피해야')){sec='w';continue;}
+
+    const sumM=t.match(/\*\*핵심 한 줄[:\：]?\*\*\s*(.*)/);
+    if(sumM) r.summary=sumM[1].trim();
+
+    if(sec==='p'){
+      const pm=t.match(/^###\s*필라\s*\d+[\.\s]+(.+)/);
+      if(pm){pillar={title:pm[1].trim(),reason:'',directions:[]};r.pillars.push(pillar);continue;}
+      if(pillar){
+        const rm=t.match(/\*\*선정 이유[:\：]?\*\*\s*(.*)/);
+        if(rm){pillar.reason=rm[1].trim();continue;}
+        if(t.startsWith('- ')&&!t.startsWith('- **')) pillar.directions.push(t.slice(2).trim());
+      }
+    }
+    if(sec==='c'){
+      const cm=t.match(/^###\s*(.+)/);
+      if(cm&&!t.includes('단계')){channel={name:cm[1].trim(),items:[]};r.channels.push(channel);continue;}
+      if(channel&&t.startsWith('|')&&!t.match(/^[\|\s\-]+$/)&&!t.includes('콘텐츠 유형')){
+        const cells=t.split('|').map(c=>c.trim()).filter(Boolean);
+        if(cells.length>=2) channel.items.push({type:cells[0],kind:cells[1]||'',topic:cells[2]||''});
+      }
+    }
+    if(sec==='j'){
+      if(/인지/.test(t)) jStage='awareness';
+      else if(/고려/.test(t)) jStage='consideration';
+      else if(/구매|예약/.test(t)&&/단계/.test(t)) jStage='conversion';
+      else if(/재방문|리텐션/.test(t)) jStage='retention';
+      if(jStage&&t.startsWith('- ')) r.journey[jStage].push(t.slice(2).trim());
+    }
+    if(sec==='t'&&t.startsWith('|')&&!t.match(/^[\|\s\-]+$/)&&!t.includes('순위')){
+      const cells=t.split('|').map(c=>c.trim()).filter(Boolean);
+      if(cells.length>=3) r.top5.push({rank:cells[0],title:cells[1],type:cells[2],keyword:cells[3]||'',reason:cells[4]||''});
+    }
+    if(sec==='w'){
+      const wm=t.match(/^\*\*[①②③④⑤⑥]?\s*(.+?)\*\*$/)||t.match(/^[①②③④⑤⑥]\s*(.+)/);
+      if(wm){r.warnings.push({title:wm[1].trim(),desc:''});}
+      else if(r.warnings.length&&t&&!t.startsWith('#')&&!t.startsWith('**')){
+        const last=r.warnings[r.warnings.length-1];
+        if(!last.desc) last.desc=t;
+        else if(last.desc.length<180) last.desc+=' '+t;
+      }
+    }
+  }
+  r.pillars=r.pillars.filter(p=>p.title);
+  r.top5=r.top5.filter(t=>t.title);
+  r.warnings=r.warnings.filter(w=>w.title);
+  return r;
+}
+
+async function buildAndDownloadPPT(){
+  const s3title=document.getElementById('s3title');
+  const s3sub=document.getElementById('s3sub');
+  const s3icon=document.getElementById('s3icon');
+  const btnRow3=document.getElementById('btnRow3');
+  s3icon.textContent='⚡';
+  s3title.textContent='PPT 생성 중...';
+  s3sub.textContent='슬라이드를 구성하고 있습니다';
+  btnRow3.style.display='none';
+
+  try{
+    const data=parseStrategy(rawStrategy);
+    const name=currentName||'광고주';
+
+    const pres=new PptxGenJS();
+    pres.layout='LAYOUT_16x9';
+    pres.title=`${name} 콘텐츠 전략`;
+
+    const C={navy:'0D1B3E',blue:'1A3A6B',gold:'C8941A',goldLt:'E8B84B',white:'FFFFFF',offwhite:'F4F6FA',border:'D8DEF0',gray:'8A9BB5',danger:'A32D2D'};
+    const mk=()=>({type:'outer',blur:5,offset:1,angle:135,color:'C0CCDD',opacity:0.14});
+
+    function dh(s,title,sub){
+      s.addShape('rect',{x:0,y:0,w:10,h:1.2,fill:{color:C.navy},line:{color:C.navy}});
+      s.addShape('rect',{x:0,y:1.17,w:10,h:0.05,fill:{color:C.gold},line:{color:C.gold}});
+      s.addText(title,{x:.5,y:.18,w:9,h:.58,fontSize:22,bold:true,color:C.white,fontFace:'Trebuchet MS',margin:0});
+      if(sub) s.addText(sub,{x:.5,y:.76,w:9,h:.3,fontSize:11,color:'C8B882',fontFace:'Calibri',margin:0});
+    }
+    function dot(s,x,y){s.addShape('ellipse',{x,y,w:.08,h:.08,fill:{color:C.gold},line:{color:C.gold}});}
+    function card(s,x,y,w,h,fill){s.addShape('rect',{x,y,w,h,fill:{color:fill||C.white},line:{color:C.border,width:.5},shadow:mk()});}
+    function tr(s,str,max){return str&&str.length>max?str.slice(0,max-1)+'…':str||'';}
+
+    // Slide 1: Title
+    {const s=pres.addSlide();
+    s.background={color:C.navy};
+    s.addShape('ellipse',{x:6.5,y:-.6,w:4.5,h:4.5,fill:{color:'142550'},line:{color:'142550'}});
+    s.addShape('ellipse',{x:7.8,y:2.6,w:3,h:3,fill:{color:'0A1830'},line:{color:'0A1830'}});
+    s.addShape('rect',{x:0,y:0,w:.18,h:5.625,fill:{color:C.gold},line:{color:C.gold}});
+    s.addText('CONTENT STRATEGY',{x:.5,y:.9,w:7,h:.3,fontSize:10,bold:true,color:C.gold,charSpacing:6,fontFace:'Trebuchet MS',margin:0});
+    s.addText('콘텐츠 전략 보고서',{x:.5,y:1.3,w:7.5,h:1.1,fontSize:40,bold:true,color:C.white,fontFace:'Trebuchet MS',margin:0});
+    s.addText(name,{x:.5,y:2.48,w:7,h:.45,fontSize:18,color:'C8B882',fontFace:'Calibri',margin:0});
+    s.addShape('line',{x:.5,y:3.08,w:5,h:0,line:{color:C.gold,width:1}});
+    s.addText(new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'}),{x:.5,y:3.28,w:7,h:.28,fontSize:10,color:C.gray,fontFace:'Calibri',margin:0});
+    if(data.summary) s.addText(tr(data.summary,80),{x:.5,y:3.7,w:8,h:.6,fontSize:11,color:'B0C0D8',fontFace:'Calibri',italic:true,margin:0});}
+
+    // Slide 2: Pillars
+    if(data.pillars.length){
+      const s=pres.addSlide();s.background={color:'F4F6FA'};
+      dh(s,'핵심 콘텐츠 필라','브랜드 콘텐츠를 구성하는 전략 축');
+      const pillars=data.pillars.slice(0,5),cnt=pillars.length;
+      const cw=cnt<=3?2.8:cnt===4?2.18:1.76;
+      const gap=cnt>1?(9.44-cw*cnt)/(cnt-1):0;
+      const pColors=[C.navy,C.blue,'4A5A8A','6D2E46',C.gold];
+      pillars.forEach((p,i)=>{
+        const x=.28+i*(cw+gap);
+        card(s,x,1.38,cw,3.85,C.white);
+        s.addShape('rect',{x,y:1.38,w:cw,h:.46,fill:{color:pColors[i]},line:{color:pColors[i]}});
+        s.addText(`0${i+1}`,{x,y:1.42,w:cw,h:.38,fontSize:16,bold:true,color:i===4?C.navy:'E8B84B',align:'center',fontFace:'Trebuchet MS',margin:0});
+        s.addText(tr(p.title,18),{x:x+.1,y:1.92,w:cw-.2,h:.32,fontSize:10,bold:true,color:C.navy,fontFace:'Trebuchet MS',align:'center',margin:0});
+        s.addShape('line',{x:x+.15,y:2.3,w:cw-.3,h:0,line:{color:C.border,width:.5}});
+        s.addText(tr(p.reason,120),{x:x+.1,y:2.38,w:cw-.2,h:1.0,fontSize:8,color:C.gray,fontFace:'Calibri',lineSpacingMultiple:1.3,margin:0});
+        if(p.directions.length){
+          s.addText('방향',{x:x+.1,y:3.44,w:cw-.2,h:.22,fontSize:7.5,bold:true,color:C.navy,fontFace:'Calibri',margin:0});
+          p.directions.slice(0,3).forEach((d,j)=>{
+            dot(s,x+.12,3.72+j*.42);
+            s.addText(tr(d,45),{x:x+.26,y:3.66+j*.42,w:cw-.38,h:.38,fontSize:7.5,color:C.gray,fontFace:'Calibri',lineSpacingMultiple:1.2,margin:0});
+          });
+        }
+      });
+    }
+
+    // Slide 3: Channels
+    if(data.channels.length){
+      const s=pres.addSlide();s.background={color:'F4F6FA'};
+      dh(s,'채널별 콘텐츠 전략','Searchable · Shareable 역할 분리');
+      const chs=data.channels.slice(0,4),cnt=chs.length;
+      const cw=cnt<=2?4.5:cnt===3?2.95:2.18;
+      const gap=cnt>1?(9.44-cw*cnt)/(cnt-1):0;
+      const chColors=[C.navy,C.blue,'4A5A8A','6D2E46'];
+      chs.forEach((ch,i)=>{
+        const x=.28+i*(cw+gap);
+        card(s,x,1.38,cw,3.85,C.white);
+        s.addShape('rect',{x,y:1.38,w:cw,h:.6,fill:{color:chColors[i]},line:{color:chColors[i]}});
+        s.addText(tr(ch.name,14),{x:x+.1,y:1.46,w:cw-.2,h:.42,fontSize:13,bold:true,color:C.white,fontFace:'Trebuchet MS',margin:0});
+        s.addShape('line',{x:x+.1,y:2.05,w:cw-.2,h:0,line:{color:C.border,width:.5}});
+        ch.items.slice(0,6).forEach((item,j)=>{
+          dot(s,x+.12,2.15+j*.47+.06);
+          const lbl=item.type?`[${item.type}] ${item.topic}`:item.topic;
+          s.addText(tr(lbl,50),{x:x+.26,y:2.1+j*.47,w:cw-.38,h:.42,fontSize:8,color:C.gray,fontFace:'Calibri',lineSpacingMultiple:1.2,margin:0});
+        });
+      });
+    }
+
+    // Slide 4: Journey
+    {const s=pres.addSlide();s.background={color:'F4F6FA'};
+    dh(s,'바이어 여정 단계별 콘텐츠','인지 → 고려 → 구매/예약 → 재방문');
+    const stages=[
+      {k:'awareness',lb:'01 인지',gl:'잠재 고객 첫 노출',color:C.navy},
+      {k:'consideration',lb:'02 고려',gl:'망설이는 사람 확신',color:C.blue},
+      {k:'conversion',lb:'03 구매/예약',gl:'즉각 행동 유도',color:'3D5A80'},
+      {k:'retention',lb:'04 재방문',gl:'단골 전환',color:'6D2E46'},
+    ];
+    stages.forEach((st,i)=>{
+      const y=1.38+i*1.04;
+      s.addShape('rect',{x:.28,y,w:1.55,h:.9,fill:{color:st.color},line:{color:st.color}});
+      s.addText(st.lb,{x:.28,y:y+.06,w:1.55,h:.36,fontSize:11,bold:true,color:C.white,fontFace:'Trebuchet MS',align:'center',margin:0});
+      s.addText(st.gl,{x:.28,y:y+.46,w:1.55,h:.35,fontSize:7.5,color:'D0DCEF',fontFace:'Calibri',align:'center',lineSpacingMultiple:1.1,margin:0});
+      s.addShape('rect',{x:1.83,y:y+.35,w:.18,h:.18,fill:{color:st.color},line:{color:st.color}});
+      card(s,2.01,y,7.7,.9,C.white);
+      (data.journey[st.k]||[]).slice(0,4).forEach((item,j)=>{
+        const cx=2.01+(j%2)*3.82,cy=y+.08+Math.floor(j/2)*.42;
+        dot(s,cx+.12,cy+.1);
+        s.addText(tr(item,50),{x:cx+.26,y:cy+.04,w:3.38,h:.38,fontSize:8.2,color:C.gray,fontFace:'Calibri',lineSpacingMultiple:1.2,margin:0});
+      });
+    });}
+
+    // Slide 5: TOP5
+    if(data.top5.length){
+      const s=pres.addSlide();s.background={color:'F4F6FA'};
+      dh(s,'우선순위 콘텐츠 TOP 5','지금 당장 시작할 핵심 콘텐츠');
+      const tColors={'릴스':'A32D2D','피드':'1A3A6B','피드 캐러셀':'1A3A6B','스토리':'5B4A9C','하이라이트':'0F6E56'};
+      data.top5.slice(0,5).forEach((t,i)=>{
+        const y=1.38+i*.82;
+        card(s,.28,y,9.44,.74,C.white);
+        s.addShape('rect',{x:.28,y,w:.55,h:.74,fill:{color:C.navy},line:{color:C.navy}});
+        s.addText(`0${i+1}`,{x:.28,y,w:.55,h:.74,fontSize:14,bold:true,color:C.gold,align:'center',valign:'middle',fontFace:'Trebuchet MS',margin:0});
+        const tc=tColors[t.type]||C.blue;
+        s.addShape('roundedRect',{x:.95,y:y+.13,w:1.0,h:.22,rectRadius:.04,fill:{color:tc},line:{color:tc}});
+        s.addText(tr(t.type,8),{x:.95,y:y+.13,w:1.0,h:.22,fontSize:7.5,bold:true,color:C.white,align:'center',valign:'middle',fontFace:'Calibri',margin:0});
+        s.addText(tr(t.title,55),{x:2.08,y:y+.06,w:4.5,h:.32,fontSize:10,bold:true,color:C.navy,fontFace:'Trebuchet MS',margin:0});
+        if(t.keyword) s.addText(tr(t.keyword,48),{x:2.08,y:y+.42,w:4.5,h:.24,fontSize:8,color:C.gold,fontFace:'Calibri',margin:0});
+        s.addShape('line',{x:6.7,y:y+.14,w:0,h:.46,line:{color:C.border,width:.5}});
+        if(t.reason) s.addText(tr(t.reason,80),{x:6.84,y:y+.07,w:2.74,h:.62,fontSize:8,color:C.gray,fontFace:'Calibri',lineSpacingMultiple:1.25,margin:0});
+      });
+    }
+
+    // Slide 6: Warnings
+    if(data.warnings.length){
+      const s=pres.addSlide();s.background={color:'F4F6FA'};
+      dh(s,'피해야 할 콘텐츠 패턴','운영 리스크 & 주의사항');
+      const pos=[{x:.28,y:1.38},{x:3.42,y:1.38},{x:6.56,y:1.38},{x:.28,y:3.18},{x:3.42,y:3.18},{x:6.56,y:3.18}];
+      data.warnings.slice(0,6).forEach((w,i)=>{
+        const {x,y}=pos[i];
+        card(s,x,y,2.95,1.6,C.white);
+        s.addShape('rect',{x,y,w:2.95,h:.06,fill:{color:C.danger},line:{color:C.danger}});
+        s.addText(`⚠ 0${i+1}`,{x:x+.12,y:y+.14,w:.7,h:.26,fontSize:9.5,bold:true,color:C.danger,fontFace:'Calibri',margin:0});
+        s.addText(tr(w.title,22),{x:x+.12,y:y+.4,w:2.7,h:.3,fontSize:10,bold:true,color:C.navy,fontFace:'Trebuchet MS',margin:0});
+        s.addShape('line',{x:x+.12,y:y+.76,w:2.68,h:0,line:{color:C.border,width:.5}});
+        s.addText(tr(w.desc,110),{x:x+.12,y:y+.84,w:2.7,h:.65,fontSize:8.2,color:C.gray,fontFace:'Calibri',lineSpacingMultiple:1.3,margin:0});
+      });
+    }
+
+    // Slide 7: Summary
+    {const s=pres.addSlide();
+    s.background={color:C.navy};
+    s.addShape('ellipse',{x:7,y:-.5,w:4,h:4,fill:{color:'142550'},line:{color:'142550'}});
+    s.addShape('ellipse',{x:-.5,y:3.2,w:3,h:3,fill:{color:'142550'},line:{color:'142550'}});
+    s.addShape('rect',{x:0,y:0,w:10,h:.07,fill:{color:C.gold},line:{color:C.gold}});
+    s.addText('핵심 요약',{x:.5,y:.3,w:9,h:.45,fontSize:20,bold:true,color:C.white,fontFace:'Trebuchet MS',margin:0});
+    if(data.summary) s.addText(data.summary,{x:.5,y:.85,w:9,h:.5,fontSize:12,color:'B0C0D8',fontFace:'Calibri',italic:true,margin:0});
+    data.pillars.slice(0,3).forEach((p,i)=>{
+      const x=.4+i*3.15;
+      s.addShape('rect',{x,y:1.55,w:2.88,h:2.6,fill:{color:'142550'},line:{color:'2A4070',width:.5}});
+      s.addShape('rect',{x,y:1.55,w:.1,h:2.6,fill:{color:C.gold},line:{color:C.gold}});
+      s.addText(`필라 ${i+1}. ${tr(p.title,14)}`,{x:x+.2,y:1.68,w:2.6,h:.35,fontSize:11,bold:true,color:C.gold,fontFace:'Trebuchet MS',margin:0});
+      p.directions.slice(0,3).forEach((d,j)=>{
+        s.addShape('ellipse',{x:x+.22,y:2.18+j*.55,w:.08,h:.08,fill:{color:'8A9BB5'},line:{color:'8A9BB5'}});
+        s.addText(tr(d,26),{x:x+.38,y:2.1+j*.55,w:2.38,h:.45,fontSize:9.5,color:C.white,fontFace:'Calibri',lineSpacingMultiple:1.25,margin:0});
+      });
+    });
+    s.addShape('rect',{x:0,y:4.45,w:10,h:1.175,fill:{color:C.gold},line:{color:C.gold}});
+    s.addText(`${name}  ·  콘텐츠 전략 보고서  ·  ${new Date().toLocaleDateString('ko-KR')}`,{x:.5,y:4.62,w:9,h:.4,fontSize:11,bold:true,color:C.navy,align:'center',fontFace:'Trebuchet MS',margin:0});}
+
+    // 다운로드
+    const filename=`${name}_콘텐츠전략_${new Date().toLocaleDateString('ko-KR').replace(/\./g,'').replace(/ /g,'')}.pptx`;
+    await pres.writeFile({fileName:filename});
+
+    // 성공 UI
+    s3icon.textContent='✅';
+    s3title.textContent='PPT 다운로드 완료!';
+    s3sub.innerHTML=`<span style="color:var(--ok);font-weight:600;">${filename}</span> 파일을 확인하세요`;
+    btnRow3.style.display='flex';
+
+  } catch(e){
+    s3icon.textContent='❌';
+    s3title.textContent='오류 발생';
+    s3sub.textContent='';
+    document.getElementById('s3msg').innerHTML=`<div class="msg err" style="margin-top:12px;">오류: ${e.message}</div>`;
+    btnRow3.style.display='flex';
+  }
+}
+
+// ── 업종 데이터 ───────────────────────────────────────────────────
+const INDUSTRY_DATA = [
+  { group:'뷰티 · 반영구 · 속눈썹', items:[
+    '반영구 화장 (눈썹 / 아이라인 / 입술)','속눈썹 연장 / 펌',
+    '눈썹 전문샵 (디자인 · 왁싱)','속눈썹 · 반영구 복합샵',
+    '헤나 눈썹 / 눈썹 문신','네일샵 / 젤네일','네일 아트 전문',
+    '왁싱샵 / 제모 전문','피어싱샵','메이크업 아티스트 / 스튜디오',
+    '뷰티 소품 · 용품 쇼핑몰',
+  ]},
+  { group:'뷰티 · 헤어', items:[
+    '헤어 살롱 / 미용실','남성 전문 바버샵',
+    '탈모 · 두피 케어 전문','헤어 익스텐션 전문',
+    '드라이바 / 블로우 전문','헤어 제품 / 브랜드',
+  ]},
+  { group:'뷰티 · 피부 · 케어', items:[
+    '스킨케어 / 화장품 브랜드','메이크업 / 색조 브랜드',
+    '비건 · 클린 뷰티 브랜드','에스테틱 / 피부 관리실',
+    '피부과 / 성형외과 클리닉','레이저 · 리프팅 전문 피부과',
+    '한의원 / 한방 피부 클리닉','다이어트 · 체형관리 / 비만 클리닉',
+    '슬리밍 · 바디 케어샵',
+  ]},
+  { group:'뷰티 · 의료', items:[
+    '치과 / 치아 미백','병원 / 의원','약국 / 헬스케어 제품',
+  ]},
+  { group:'요식업 · 식음료', items:[
+    '한식당','일식당 / 스시','중식당','양식 / 파스타 / 스테이크',
+    '분식 / 떡볶이 / 김밥','치킨 / 패스트푸드','카페 / 디저트',
+    '베이커리 / 빵집','술집 / 이자카야 / 포차','와인바 / 루프탑바',
+    '고깃집 / 삼겹살','해산물 / 횟집','채식 / 비건 식당',
+    '브런치 / 샐러드바','배달 전문점','건강식품 / 기능성 식품',
+  ]},
+  { group:'패션 · 라이프스타일', items:[
+    '패션 / 의류 브랜드','신발 / 잡화','명품 / 럭셔리',
+    '빈티지 / 중고 의류','스포츠 / 아웃도어 웨어',
+    '인테리어 / 가구','리빙 / 생활용품','반려동물 용품',
+  ]},
+  { group:'피트니스 · 스포츠', items:[
+    '헬스장 / PT 센터','요가 / 필라테스 스튜디오',
+    '클라이밍 / 스포츠 센터','수영장 / 수상 스포츠',
+    '골프 / 테니스','스포츠 용품 / 장비',
+  ]},
+  { group:'교육 · 콘텐츠', items:[
+    '학원 / 입시','온라인 강의 / 이러닝','어학 / 외국어 교육',
+    '아동 교육 / 키즈','직무 교육 / 자격증','출판 / 도서',
+  ]},
+  { group:'IT · 비즈니스', items:[
+    'SaaS / 소프트웨어','앱 / 모바일 서비스','이커머스 / 쇼핑몰',
+    '마케팅 / 광고 에이전시','컨설팅 / 전문직 서비스',
+    'HR / 채용 플랫폼','스타트업 / 테크',
+  ]},
+  { group:'금융 · 부동산', items:[
+    '은행 / 핀테크','보험','투자 / 자산관리',
+    '부동산 / 공인중개사','인테리어 시공 / 리모델링',
+  ]},
+  { group:'여행 · 레저', items:[
+    '여행사 / 패키지','숙박 / 호텔 / 펜션','항공 / 교통','액티비티 / 체험',
+  ]},
+  { group:'기타', items:[
+    '결혼 / 웨딩','이벤트 / 공연','종교 / 비영리','기타',
+  ]},
+];
+
+// ── 검색 가능한 드롭다운 초기화 ──────────────────────────────────
+function initCombobox() {
+  const wrap    = document.getElementById('cb-industry');
+  const trigger = document.getElementById('cb-industry-btn');
+  const display = document.getElementById('cb-industry-display');
+  const panel   = document.getElementById('cb-industry-panel');
+  const search  = document.getElementById('cb-industry-search');
+  const list    = document.getElementById('cb-industry-list');
+  const hidden  = document.getElementById('f_industry');
+
+  let selectedValue = '';
+  let focusedIdx    = -1;
+  let visibleOpts   = [];
+
+  // 패널 열기
+  function open() {
+    trigger.setAttribute('aria-expanded','true');
+    panel.classList.add('open');
+    search.value = '';
+    renderOptions('');
+    setTimeout(()=>search.focus(), 0);
+  }
+  // 패널 닫기
+  function close() {
+    trigger.setAttribute('aria-expanded','false');
+    panel.classList.remove('open');
+    focusedIdx = -1;
+  }
+  // 값 선택
+  function select(val) {
+    selectedValue = val;
+    hidden.value  = val;
+    display.textContent = val;
+    display.classList.remove('placeholder');
+    close();
+    trigger.focus();
+  }
+
+  // 한글 포함 검색 매칭 (공백 무시, 소문자 변환)
+  function match(text, query) {
+    if (!query) return true;
+    const t = text.replace(/\s/g,'').toLowerCase();
+    const q = query.replace(/\s/g,'').toLowerCase();
+    return t.includes(q);
+  }
+
+  // 검색어 하이라이트
+  function highlight(text, query) {
+    if (!query) return escapeHtml(text);
+    const q = query.replace(/\s/g,'').toLowerCase();
+    const plain = text.replace(/\s/g,'').toLowerCase();
+    const idx = plain.indexOf(q);
+    if (idx < 0) return escapeHtml(text);
+    // 원본 텍스트 기준 범위 계산
+    let mapped=0, start=-1, end=-1;
+    for (let i=0; i<text.length; i++) {
+      if (text[i] !== ' ') {
+        if (mapped === idx) start = i;
+        if (mapped === idx + q.length - 1) { end = i+1; break; }
+        mapped++;
+      }
+    }
+    if (start < 0) return escapeHtml(text);
+    return escapeHtml(text.slice(0,start))
+      + `<span class="cb-highlight">${escapeHtml(text.slice(start,end))}</span>`
+      + escapeHtml(text.slice(end));
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // 옵션 목록 렌더링
+  function renderOptions(query) {
+    list.innerHTML = '';
+    visibleOpts = [];
+    let total = 0;
+    INDUSTRY_DATA.forEach(group => {
+      const matched = group.items.filter(item => match(item, query));
+      if (!matched.length) return;
+      const g = document.createElement('div');
+      g.className = 'cb-group-label';
+      g.setAttribute('aria-hidden','true');
+      g.textContent = group.group;
+      list.appendChild(g);
+      matched.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'cb-option' + (item===selectedValue?' cb-selected':'');
+        el.setAttribute('role','option');
+        el.setAttribute('aria-selected', item===selectedValue?'true':'false');
+        el.innerHTML = highlight(item, query);
+        el.addEventListener('mousedown', e => { e.preventDefault(); select(item); });
+        el.addEventListener('mousemove', () => {
+          focusedIdx = visibleOpts.findIndex(o=>o.el===el);
+          applyFocus(focusedIdx);
+        });
+        list.appendChild(el);
+        visibleOpts.push({ value:item, el });
+        total++;
+      });
+    });
+    if (!total) {
+      const e = document.createElement('div');
+      e.className = 'cb-empty';
+      e.textContent = '검색 결과가 없습니다';
+      list.appendChild(e);
+    }
+    focusedIdx = -1;
+  }
+
+  // 포커스 표시
+  function applyFocus(idx) {
+    visibleOpts.forEach((o,i) => o.el.classList.toggle('cb-focused', i===idx));
+    if (idx >= 0 && visibleOpts[idx]) visibleOpts[idx].el.scrollIntoView({block:'nearest'});
+  }
+
+  // 이벤트: 트리거 클릭
+  trigger.addEventListener('click', () =>
+    panel.classList.contains('open') ? close() : open());
+
+  // 이벤트: 실시간 검색
+  search.addEventListener('input', () => { renderOptions(search.value); });
+
+  // 이벤트: 키보드 조작
+  search.addEventListener('keydown', e => {
+    if (e.key==='ArrowDown') {
+      e.preventDefault();
+      applyFocus(focusedIdx = Math.min(focusedIdx+1, visibleOpts.length-1));
+    } else if (e.key==='ArrowUp') {
+      e.preventDefault();
+      applyFocus(focusedIdx = Math.max(focusedIdx-1, 0));
+    } else if (e.key==='Enter') {
+      e.preventDefault();
+      if (focusedIdx>=0 && visibleOpts[focusedIdx]) select(visibleOpts[focusedIdx].value);
+    } else if (e.key==='Escape' || e.key==='Tab') {
+      close();
+    }
+  });
+
+  // 이벤트: 외부 클릭 시 닫기
+  document.addEventListener('mousedown', e => { if (!wrap.contains(e.target)) close(); });
+
+  // 초기 렌더링
+  renderOptions('');
+}
+
+// ── 이력 ─────────────────────────────────────────────────────────
+function renderHist(){
+  const m=new Date().getMonth();
+  document.getElementById('hTotal').textContent=hist.length;
+  document.getElementById('hMonth').textContent=hist.filter(h=>new Date(h.date).getMonth()===m).length;
+  document.getElementById('hLast').textContent=hist.length?new Date(hist[0].date).toLocaleDateString('ko-KR',{month:'short',day:'numeric'}):'-';
+  const list=document.getElementById('histList');
+  if(!hist.length){list.innerHTML='<div class="empty"><div class="empty-icon">📄</div>아직 생성 이력이 없어요</div>';return;}
+  list.innerHTML=hist.map((h,i)=>`
+    <div class="hist-item">
+      <div><div class="hist-name">${h.name}</div><div class="hist-meta">${h.industry} · ${new Date(h.date).toLocaleString('ko-KR',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div></div>
+      <button class="hist-del" onclick="delHist(${i})"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+    </div>`).join('');
+}
+function delHist(i){hist.splice(i,1);localStorage.setItem('cs_hist',JSON.stringify(hist));renderHist();}
+
+// ── 초기화 ────────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  initCombobox();
+  const k=getApiKey();
+  if(!k){
+    document.getElementById('msg1').innerHTML='<div class="msg info">⚡ 처음 사용하시나요? 왼쪽 메뉴 <strong>API 키 설정</strong>에서 Anthropic API 키를 먼저 입력해주세요.</div>';
+  }
+});
+</script>
+</body>
+</html>
